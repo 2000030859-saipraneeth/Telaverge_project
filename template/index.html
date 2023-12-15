@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <style>
+        #loadingSpinner {
+            display: none;
+        }
+
+        #resultTable {
+            display: none;
+        }
+    </style>
+    <title>Socio Sage</title>
+</head>
+<body>
+    <h1>Socio Sage</h1>
+
+    <!-- Form to input keyword -->
+    <form id="keywordForm">
+        <label for="keyword">Enter Keyword:</label>
+        <input type="text" id="keyword" name="keyword" required>
+        <button type="submit">Submit</button>
+    </form>
+
+    <!-- Loading spinner -->
+    <div id="loadingSpinner">
+        <i class="fa fa-spinner fa-spin"></i> Loading...
+    </div>
+
+    <table border="1" id="resultTable">
+        <tr>
+            <th>Posted By</th>
+            <th>Text Content</th>
+            <th>Media Content</th>
+            <th>Likes</th>
+            <th>Shares</th>
+            <th>Source</th>
+            <th>Text Content</th>
+        </tr>
+        <!-- Results will be displayed here -->
+    </table>
+
+    <script>
+    // Function to update the table with new data
+    function updateTable(data) {
+        const table = document.getElementById("resultTable");
+        // Clear existing rows
+        table.innerHTML = "<tr><th>Posted By</th><th>Text Content</th><th>Media Content</th><th>Likes</th><th>Shares</th><th>Source</th><th>Text Content</th></tr>";
+
+        // Populate the table with new data
+        data.forEach(record => {
+            const row = table.insertRow();
+            row.innerHTML = `
+                <td>${record.posted_by}</td>
+                <td>${record.text_content}</td>
+                <td><a href="${record.media_content}" target="_blank"><i class="fa fa-link"></i></a></td>
+                <td>${record.likes}</td>
+                <td>${record.Shares}</td>
+                <td><a href="${record.url}" target="_blank"><i class="fa fa-link"></i></a></td>
+                <td>${record.Source}</td>
+            `;
+        });
+
+        // Hide the loading spinner
+        document.getElementById("loadingSpinner").style.display = "none";
+        // Show the table
+        table.style.display = "table";
+    }
+
+    // Submit form using JavaScript and update the table dynamically
+    document.getElementById("keywordForm").addEventListener("submit", function(event) {
+        event.preventDefault();
+        let keyword = document.getElementById("keyword").value;
+
+        // Show the loading spinner
+        document.getElementById("loadingSpinner").style.display = "block";
+
+        // Hide the table
+        document.getElementById("resultTable").style.display = "none";
+
+        fetch(`/api/fetch_results?keyword=${encodeURIComponent(keyword)}`)
+            .then(response => response.json())
+            .then(data => {
+                // Update the table with the new data
+                updateTable(data);
+
+                // Fetch data from the database and update the table
+                fetch('/api/get_data_from_db')
+                    .then(response => response.json())
+                    .then(data => {
+                        // Update the table with the data from the database
+                        updateTable(data);
+                    })
+                    .catch(error => console.error("Error fetching data from the database:", error));
+            })
+            .catch(error => console.error("Error fetching results:", error));
+    });
+
+    // Initial load of data from the database
+    fetch('/api/get_data_from_db')
+        .then(response => response.json())
+        .then(data => {
+            // Update the table with the initial data
+            updateTable(data);
+        })
+        .catch(error => console.error("Error fetching initial data:", error));
+    </script>
+</body>
+</html>

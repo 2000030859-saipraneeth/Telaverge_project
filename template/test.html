@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="stylesheet/css_final.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+        <script src="{{ url_for('static', filename='filter.js') }}"></script>
+
+
+    <!-- <link rel="stylesheet" href="./css-1.css"> -->
+    <title>Socio Sage</title>
+</head>
+
+<body>
+    <div class="heading">
+    <h1>Socio Sage</h1>
+    <!-- <button id="get-unique-values" onclick="getUniqueValuesFromColumn()">Get unique column values</button> -->
+</div>
+
+    <script src="https://kit.fontawesome.com/d97b87339f.js" crossorigin="anonymous"></script>
+
+       <div id="loadingSpinner">
+        <i class="fa fa-spinner fa-spin"></i> Loading...
+    </div>
+
+    <div class="search-box">
+     <form id="keywordForm">
+        <input class="search-input" id="keyword" type="text" placeholder="Search anything">
+         <button type='submit' class="search-btn"><i class="fas fa-search"></i></button>
+    </form>
+        </div>
+
+    <div class="outer-wrapper">
+    <div class="table-wrapper">
+    <table id="emp-table">
+        <thead>
+<!--            <th col-index = 1>Employee ID</th>-->
+<!--            <th col-index = 2>Gender-->
+<!--                <select class="table-filter" onchange="filter_rows()">-->
+<!--                    <option value="all"></option>-->
+<!--                </select>-->
+<!--            </th>-->
+
+<!--            <th col-index = 3>Department-->
+<!--                <select class="table-filter" onchange="filter_rows()">-->
+<!--                    <option value="all"></option>-->
+<!--                </select>-->
+<!--            </th>-->
+<!--            <th col-index = 4>Status-->
+<!--                <select class="table-filter" onchange="filter_rows()">-->
+<!--                    <option value="all"></option>-->
+<!--                </select>-->
+<!--            </th>-->
+<!--            <th col-index = 5>Office-->
+<!--                <select class="table-filter" onchange="filter_rows()">-->
+<!--                    <option value="all"></option>-->
+<!--                </select>-->
+<!--            </th>-->
+
+        <tr><th col-index = 1>Posted By
+        <select class="table-filter" onchange="filter_rows()">
+                    <option value="all"></option>
+                </select>
+        </th>
+
+            <th col-index = 2>Text Content
+            <input class="search-hash" id="hash" type="text" placeholder="#tag-search" onkeyup="searchhash()"></th>
+            <th col-index = 3>Media Content</th>
+            <th col-index = 4>likes <select class="table-sorter1" onchange="sortRows1()">
+        <option value="all"></option>
+        <option value="asc">Ascending</option>
+        <option value="desc">Descending</option>
+    </select></th>
+            <th col-index = 5>Shares <select class="table-sorter2" onchange="sortRows2()">
+        <option value="all"></option>
+        <option value="asc">Ascending</option>
+        <option value="desc">Descending</option>
+    </select></th>
+            <th col-index = 6>URL</th>
+            <th col-index = 7>Source <select class="table-filter" onchange="filter_rows()">
+                    <option value="all"></option>
+                </select></th><th col-index = 8>Relavance<select class="table-sorter3" onchange="sortRows3()">
+        <option value="all"></option>
+        <option value="asc">Ascending</option>
+        <option value="desc">Descending</option>
+    </select></th>
+<tr>
+
+
+        </thead>
+        <tbody></tbody>
+        </table>
+        <script>
+    // Function to update the table with new data
+    function updateTable(data) {
+        const table_1 = document.getElementById("emp-table");
+        const table = table_1.querySelector("tbody");
+        table.innerHTML = "";
+
+        // Clear existing rows
+        console.log(table.innerHTML)
+
+
+        data.forEach(record => {
+            if (record.percentile !== 0) {
+        const row = table.insertRow();
+        const percentile = record.percentile === "undefined" ? 0.0 : record.percentile;
+        row.innerHTML = `
+            <td>${record.posted_by}</td>
+            <td>${record.text_content}</td>
+            <td><a href="${record.media_content}" target="_blank"><i class="fa fa-link"></i></a></td>
+            <td>${record.likes}</td>
+            <td>${record.Shares}</td>
+            <td><a href="${record.url}" target="_blank"><i class="fa fa-link"></i></a></td>
+            <td>${record.Source}</td>
+            <td>
+                <div class="progress-bar">
+                    <div class="bar" data-size="${percentile}">
+                        <span class="perc">${percentile}%</span>
+                    </div>
+                </div>
+            </td>
+        `;
+    }
+});
+
+        // Hide the loading spinner
+        document.getElementById("loadingSpinner").style.display = "none";
+        // Show the table
+        table_1.style.display = "table";
+        getUniqueValuesFromColumn();
+    }
+// Submit form using JavaScript and update the table dynamically
+    document.getElementById("keywordForm").addEventListener("submit", function(event) {
+        event.preventDefault();
+
+        let keyword = document.getElementById("keyword").value;
+        console.log(keyword)
+        // Show the loading spinner
+        document.getElementById("loadingSpinner").style.display = "block";
+
+        // Hide the table
+        document.getElementById("emp-table").style.display = "none";
+
+        fetch(`/api/fetch_results?keyword=${encodeURIComponent(keyword)}`)
+            .then(response => response.json())
+            .then(data => {
+                // Update the table with the new data
+                updateTable(data);
+
+                // Fetch data from the database and update the table
+                fetch('/api/get_data_from_db')
+                    .then(response => response.json())
+                    .then(data => {
+                        // Update the table with the data from the database
+                        updateTable(data);
+                    })
+                    .catch(error => console.error("Error fetching data from the database:", error));
+            })
+            .catch(error => console.error("Error fetching results:", error));
+    });
+
+    // Initial load of data from the database
+    fetch('/api/get_data_from_db')
+        .then(response => response.json())
+        .then(data => {
+            // Update the table with the initial data
+            updateTable(data);
+        })
+        .catch(error => console.error("Error fetching initial data:", error));
+    </script>
+
+    <!-- <script>getUniqueValuesFromColumn()
+    </script> -->
+    <script>
+    window.onload = () => {
+        const targetElement = document.querySelector("#emp-table > tbody > tr:nth-child(1) > td:nth-child(1)");
+
+        if (targetElement) {
+            console.log("Content of the target element:", targetElement.innerHTML);
+        } else {
+            console.log("Target element not found.");
+        }
+
+        getUniqueValuesFromColumn();
+    };
+</script>
+
+</div>
+</div>
+</body>
+
+</html>
